@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aerial Roof Measurements (Leaflet/Supabase)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -62,9 +64,7 @@
         }
     </style>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     
 </head>
@@ -174,7 +174,8 @@ affordable prices. We also provide 3D Wall measurement reports in .esx format an
                     </div>
                     <div class="bg-white p-8 rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300">
                         <div class="text-indigo-600 mb-4 inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" 
+stroke="currentColor">
  
                                 <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 10h6M9 14h6" />
                             </svg>
@@ -377,8 +378,8 @@ for="claim-number" class="block text-gray-700 font-bold mb-2">Claim Number</labe
                                 
                                     <div class="mb-4">
                                         <label for="instructions" class="block text-gray-700 font-bold mb-2">Instructions</label>
-                                        <textarea id="instructions" name="instructions" rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 
-focus:outline-none focus:ring-2 focus:ring-indigo-600"></textarea>
+                                        <textarea id="instructions" name="instructions" rows="3" class="w-full 
+px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600"></textarea>
                                     </div>
                                     <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors">Place Order</button>
                 
@@ -440,8 +441,8 @@ Contact us today to discuss your needs and get a free quote. We're excited to he
 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600"></textarea>
                             </div>
                             <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors">Send Message</button>
-                        </form>
    
+                        </form>
                     </div>
                 </div>
             </div>
@@ -455,16 +456,13 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
         </div>
     </footer>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20n6c6F4sgrrJp93S+W3gS804+h3FzBSj1k435XxSg="
-            crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script type="module">
-    // *** FIX 1: Import createClient as a module ***
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     
-    // *** FIX 2: window.onload wrapper for Leaflet timing ***
+    
     window.onload = function() {
         
         // ----------------------------------------------------------------------
@@ -477,23 +475,28 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
         
         let supabase;
         try {
-            // This now works because createClient is imported above
             supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         } catch (e) {
             console.error("Supabase Client Error: ", e);
             showMessage('Configuration Error', 'Supabase client could not be initialized. Check your URL and Key.');
-            return; // Stop execution if config fails
+            return; 
         }
 
         let userId;
         // Leaflet Map variables
         let map;
         let marker;
-        const defaultLocation = [39.8283, -98.5795];
-        // [lat, lng] - Center of the US
+        const defaultLocation = [39.8283, -98.5795]; // Center of the US
 
         // Initialize Map Function
         function initializeMap(initialCoords = defaultLocation) {
+            // CRITICAL CHECK: Ensure Leaflet has loaded
+            if (typeof L === 'undefined') {
+                console.error("Leaflet (L) is not defined. Map libraries failed to load.");
+                showMessage('Map Error', 'Map components failed to load. Check your network connection and GitHub Pages settings.');
+                return;
+            }
+            
             console.log("Initializing map...");
             // Remove previous map instance if it exists
             if (map) {
@@ -502,11 +505,15 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
 
             document.getElementById('map-loading').classList.remove('hidden');
             // Create map instance
-            map = L.map('map').setView(initialCoords, 4);
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            // FIX: Set initial zoom to 13
+            map = L.map('map').setView(initialCoords, 13);
+
+            // FIX 1: Switch to Satellite View (Esri World Imagery)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                maxZoom: 20 // Set maximum zoom to allow close inspection
             }).addTo(map);
+
             // Add Geocoder control (Search bar)
             const geocoderControl = L.Control.geocoder({
                 defaultMarkGeocode: false, // Don't add a default marker
@@ -516,18 +523,36 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
                 // Using Nominatim by default, which is free/open
                 geocoder: L.Control.Geocoder.nominatim() 
             }).addTo(map);
+            
             // Add Marker
             marker = L.marker(initialCoords, { draggable: true }).addTo(map);
+
             // Geocoder Control Event: When a location is found
             geocoderControl.on('markgeocode', function(e) {
                 const latlng = e.geocode.center;
                 const address = e.geocode.name;
                 
-                // Update map, marker, and input fields
-                map.setView(latlng, 17);
-                marker.setLatLng(latlng);
+                // Set the marker position first
+                marker.setLatLng(latlng); 
+                
+                // FIX: Ensure map reliably centers and marker moves with animation
+                map.setView(latlng, 17, {
+                    animate: true,
+                    duration: 0.5 // Animate for clear visual confirmation
+                }); 
+                
+                // Defensive Fix: Force a map size recalculation and pan after a slight delay
+                // This resolves potential rendering issues where the view doesn't update properly
+                setTimeout(() => {
+                    map.invalidateSize(true);
+                    map.panTo(latlng);
+                }, 100); 
+
                 updateOrderFields(latlng, address);
+
+                console.log("Geocode search successful. Map centered at:", latlng, "Address:", address);
             });
+
             // Map Click Event: Update marker and fields
             map.on('click', function(e) {
                 const latlng = e.latlng;
@@ -567,6 +592,7 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
         document.getElementById('modal-close-btn').addEventListener('click', () => {
             document.getElementById('message-modal').style.display = 'none';
         });
+        
         // Auth Listener and User Profile Update
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
@@ -577,10 +603,16 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
                 document.getElementById('auth-forms').classList.add('hidden');
                 document.getElementById('user-info').classList.remove('hidden');
 
-                // Initialize map and fetch reports
+                // Initialize map
+                initializeMap();
+
+                // Tell Leaflet to check its size after container is visible.
                 setTimeout(() => {
-                    initializeMap();
-                }, 500); // 500ms delay 
+                    if(map) {
+                        map.invalidateSize();
+                    }
+                }, 50); 
+                
                 listenForReports();
 
             } else {
@@ -597,6 +629,7 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
                 }
             }
         });
+        
         // Form Submissions
         document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -755,9 +788,8 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
             smoothScroll('hero');
         });
     
-    }; // This closes the window.onload 
+    }; // This closes the window.onload wrapper
 
 </script>
 </body>
 </html>
-
