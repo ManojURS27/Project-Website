@@ -502,6 +502,8 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
             if (map) {
                 map.remove();
             }
+            // FIX: Explicitly nullify the global map reference to prevent reuse conflict
+            map = null;
 
             document.getElementById('map-loading').classList.remove('hidden');
             // Create map instance
@@ -626,6 +628,8 @@ px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focu
                 // Remove map if it's there
                 if (map) {
                     map.remove();
+                    // FIX: Explicitly nullify the global map reference after removal
+                    map = null; 
                 }
             }
         });
